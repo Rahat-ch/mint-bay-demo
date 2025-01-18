@@ -6,6 +6,7 @@ import { getGeneralPaymasterInput } from "viem/zksync";
 import { useAccount } from 'wagmi';
 import abi from "@/abi/nft.json";
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Trait {
   id: string;
@@ -35,9 +36,8 @@ interface CollectClientProps {
 }
 
 export default function CollectClient({ traitsData }: CollectClientProps) {
-  const [selectedTraits, setSelectedTraits] = useState<Record<string, Trait>>({});
-  const [combinedImage, setCombinedImage] = useState<string>('');
   const [generatedImage, setGeneratedImage] = useState<string>('');
+  const [combinedImage, setCombinedImage] = useState<string>('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const { isConnected } = useAccount();
@@ -74,8 +74,6 @@ export default function CollectClient({ traitsData }: CollectClientProps) {
       return acc;
     }, {} as Record<string, Trait>);
 
-    setSelectedTraits(randomTraits);
-
     // Generate image
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -91,7 +89,7 @@ export default function CollectClient({ traitsData }: CollectClientProps) {
       const trait = randomTraits[category];
       if (trait && trait.imageURI) {
         try {
-          const img = new Image();
+          const img = new window.Image();
           await new Promise((resolve, reject) => {
             img.onload = resolve;
             img.onerror = reject;
@@ -110,8 +108,8 @@ export default function CollectClient({ traitsData }: CollectClientProps) {
     console.log('Image generated');
     
     // Prepare trait arrays for the contract
-    const traitTypes = Object.entries(randomTraits).map(([category]) => category);
-    const traitValues = Object.entries(randomTraits).map(([_, trait]) => trait.name);
+    const traitTypes = Object.keys(randomTraits);
+    const traitValues = Object.values(randomTraits).map(trait => trait.name);
 
     try {
       console.log('Starting mint transaction...');
@@ -156,16 +154,17 @@ export default function CollectClient({ traitsData }: CollectClientProps) {
 
       {isSuccess && combinedImage && (
         <div className="mt-4 flex flex-col items-center gap-4">
-          <img 
-            src={combinedImage} 
-            alt="Your Minted NFT" 
-            width={500}
-            height={500}
-            style={{ 
-              imageRendering: 'pixelated'
-            }}
-            className="border border-gray-300"
-          />
+          <div className="relative w-[500px] h-[500px]">
+            <Image 
+              src={combinedImage} 
+              alt="Your Minted NFT" 
+              fill
+              style={{ 
+                imageRendering: 'pixelated'
+              }}
+              className="border border-gray-300"
+            />
+          </div>
           {txHash && (
             <Link 
               href={`https://explorer.testnet.abs.xyz/tx/${txHash}`}
